@@ -1,0 +1,214 @@
+
+DROP TABLE BOOK_REQUESTS;
+
+CREATE TABLE BOOK_REQUESTS(
+    DUE_DATE DATE,
+    IS_ACTIVE VARCHAR(50),
+    CUSTOMER_ID VARCHAR(50),
+    BOOK_ID VARCHAR(50),
+    LIBRARIAN_ID VARCHAR(50)
+);
+
+INSERT INTO BOOK_REQUESTS (DUE_DATE, IS_ACTIVE, CUSTOMER_ID, BOOK_ID, LIBRARIAN_ID) VALUES
+    ('2021-02-01', 1, 113, 1, 20211),
+    ('2021-02-11', 1, 116, 8, 20211),
+    ('2021-01-28', 1, 116, 3, 20233),
+    ('2021-01-15', 0, 111, 7, 20211),
+    ('2021-02-01', 0, 113, 5, 20233),
+    ('2021-01-08', 1, 113, 4, 20233);
+
+DROP TABLE BOOK;
+CREATE TABLE BOOK (
+    ID INT,
+    NAME VARCHAR(50),
+    ISBN VARCHAR(50),
+    EDITION INT
+);
+
+INSERT INTO BOOK VALUES
+    (1,'piligrim souls',9876011,1),
+    (2,'piligrim souls',9876011,2),
+    (3,'python for data science',9876012,1),
+    (4,'python for data science',9876012,1),
+    (5,'python for data science',9876012,1),
+    (6,'c# 7.0 All-in-one',9876016,1),
+    (7,'c# 7.0 All-in-one',9876016,2),
+    (8,'c programming All-in-one',9876017,3),
+    (9,'c programming All-in-one',9876017,3),
+    (10,'java programming for everyone',9876018,1);
+
+DROP TABLE AUTHOR;
+CREATE TABLE AUTHOR (
+    ID INT,
+    FIRST_NAME VARCHAR(100),
+    LAST_NAME VARCHAR(100)
+);
+
+INSERT INTO AUTHOR VALUES
+    (1,'Hortsman','Cay S.'),
+    (2,'John Paul','Mueller'),
+    (3,'Mike','Chapple'),
+    (4,'Barbara','Walter');
+
+DROP TABLE BOOK_DETAILS;
+CREATE TABLE BOOK_DETAILS (
+    BOOK_ID INT,
+    AUTHOR_ID INT
+);
+
+INSERT INTO BOOK_DETAILS VALUES
+    (1,1),
+    (2,1),
+    (3,4),
+    (4,4),
+    (5,4),
+    (6,2),
+    (7,2),
+    (8,3),
+    (9,3),
+    (10,2);
+
+
+
+DROP TABLE CUSTOMER;
+CREATE TABLE CUSTOMER (
+    ID INT,
+    NAME VARCHAR(50),
+    ADDRESS VARCHAR(50)
+);
+INSERT INTO  CUSTOMER (ID, NAME, ADDRESS) VALUES
+    (111, 'Kala', '03 Ranjith St'),
+    (112, 'Amy', '6 Hudson St'),
+    (113, 'Ajay', '56 Murugappa St'),
+    (114, 'Basker', '23 Blue St'),
+    (115, 'Bella', '10 New St'),
+    (116, 'Cynthia', '107 Park St'),
+    (117, 'Zara', '34 Lombard St');
+
+DROP TABLE LIBRARIAN;
+CREATE TABLE LIBRARIAN (
+    ID INT,
+    NAME VARCHAR(50)
+);
+
+INSERT INTO LIBRARIAN (ID, NAME) VALUES
+    (20211, 'Julia Roosevelt'),
+    (20233, 'Tom White');
+    
+    
+SELECT * FROM BOOK_REQUESTS;
+SELECT * FROM BOOK;
+SELECT * FROM CUSTOMER;
+SELECT * FROM LIBRARIAN;
+SELECT * FROM AUTHOR;
+SELECT * FROM BOOK_DETAILS;
+
+
+# Q1 
+
+SELECT 
+    B.NAME AS BOOK,
+    B.ISBN AS ISBN,
+    B.EDITION AS EDITION,
+    AUTH.FIRST_NAME AS FIRST_NAME,
+    AUTH.LAST_NAME AS LAST_NAME
+FROM BOOK B
+    LEFT JOIN BOOK_DETAILS BD ON B.ID=BD.BOOK_ID
+    LEFT JOIN AUTHOR AUTH ON BD.AUTHOR_ID=AUTH.ID
+ORDER BY B.ID;
+
+# Q2
+SELECT * FROM BOOK WHERE NAME LIKE "%programming%";
+
+# Q3
+SELECT 
+    B.NAME AS BOOK_NAME,
+    BR.DUE_DATE AS DUE_DATE,
+    C.NAME AS CUSTOMER_NAME
+FROM BOOK_REQUESTS BR
+    LEFT JOIN BOOK B ON BR.BOOK_ID = B.ID 
+    LEFT JOIN BOOK_DETAILS BD ON BR.BOOK_ID = BD.BOOK_ID
+    LEFT JOIN CUSTOMER C ON C.ID = BR.CUSTOMER_ID   
+WHERE CURDATE() > BR.DUE_DATE AND BR.IS_ACTIVE = 1;
+
+# Q4
+SELECT DISTINCT NAME,ISBN,EDITION FROM BOOK;
+
+# Q5
+
+SELECT  
+    B.NAME AS BOOK_NAME,
+    C.NAME AS CUSTOMER_NAME,
+    L.NAME AS LIBRARIAN_NAME
+FROM BOOK B
+    JOIN BOOK_REQUESTS BR ON B.ID = BR.BOOK_ID
+    JOIN CUSTOMER C ON C.ID = BR.CUSTOMER_ID
+    JOIN LIBRARIAN L ON BR.LIBRARIAN_ID=L.ID;
+    
+    
+select * from (
+select row_number() over (order by b.name) as rowno,b.name as BOOK_NAME,c.name as CUSTOMER_NAME,l.name as LIBRARIAN_NAME 
+from BOOK_REQUESTS as b2 left join book as b on b2.book_id=b.id  left join CUSTOMER as
+ c on c.id=b2.customer_id left join librarians as l on b2.librarian_id=l.id group by
+ b.name) as a 
+where rowno < (select count(*) from BOOK_REQUESTS)/2;
+
+with Table_name as (subquery) 
+select * from table_name where rowno <= select count(*) from table_name/2
+
+#Q6
+
+SELECT 
+    C.ID AS CUSTOMER_ID, 
+    C.NAME AS CUSTOMER_NAME,
+    CASE 
+        WHEN BR.IS_ACTIVE = 0 THEN ABS(DATEDIFF('2021-01-20', BR.DUE_DATE)) 
+        ELSE 0 
+    END AS FINE_AMOUNT 
+FROM CUSTOMER C
+    LEFT JOIN BOOK_REQUESTS BR ON C.ID=BR.CUSTOMER_ID;
+
+SELECT
+    C.ID AS CUSTOMER_ID,
+    C.NAME AS CUSTOMER_NAME,
+    BR.IS_ACTIVE ,
+    DATEDIFF('2021-01-20',BR.DUE_DATE)  AS FINE_AMOUNT
+FROM CUSTOMER C
+    LEFT JOIN BOOK_REQUESTS BR ON C.ID=BR.CUSTOMER_ID;
+
+# Q7
+SELECT
+    L.NAME AS LIBRARIAN_NAME,
+    COUNT(*) AS NO_OF_BOOKS
+FROM LIBRARIAN L
+LEFT JOIN BOOK_REQUESTS BR ON BR.LIBRARIAN_ID = L.ID
+GROUP BY L.ID;
+
+# Q8 BOOK_NAME	BOOK_EDITION	AUTHOR_FIRST_NAME	
+SELECT 
+    C.NAME,
+    B.NAME,
+    B.EDITION,
+    AUTHOR.FIRST_NAME
+FROM CUSTOMER C
+    LEFT JOIN BOOK_REQUESTS BR ON C.ID=BR.CUSTOMER_ID
+    LEFT JOIN BOOK B ON B.ID=BR.BOOK_ID
+    LEFT JOIN BOOK_DETAILS ON BOOK_DETAILS.BOOK_ID = B.ID
+    LEFT JOIN AUTHOR ON BOOK_DETAILS.AUTHOR_ID = AUTHOR.ID
+GROUP BY C.ID,B.ISBN HAVING COUNT(*) > 1;
+
+# Q9
+
+SELECT 
+    C.ID AS ID,
+    C.NAME AS NAME,
+    C.ADDRESS AS ADDRESS
+FROM CUSTOMER C
+    LEFT JOIN BOOK_REQUESTS BR ON C.ID = BR.CUSTOMER_ID
+GROUP BY C.ID HAVING COUNT(BR.BOOK_ID) = 0
+ORDER BY NAME DESC;
+
+
+
+    
+
